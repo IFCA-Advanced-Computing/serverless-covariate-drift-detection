@@ -1,0 +1,3 @@
+litestar[standard]==2.0.0a7
+numpy==1.24.3
+frouros==0.2.7
