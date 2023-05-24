@@ -3,13 +3,13 @@
 from .drift import (
     BaseCheckDriftResponse,
     DetectorInputData,
-    NoFoundResponse,
+    DistanceBasedResponse,
 )
 from .health import HealthResponse
 
 __all__ = [
-    "DetectorInputData",
     "BaseCheckDriftResponse",
-    "NoFoundResponse",
+    "DetectorInputData",
+    "DistanceBasedResponse",
     "HealthResponse",
 ]

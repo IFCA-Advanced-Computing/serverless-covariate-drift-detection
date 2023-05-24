@@ -2,26 +2,28 @@
 
 import logging
 
-from detector import load_detector
+from detector import Detector
 from litestar import Router, get, post
 from litestar.status_codes import (
     HTTP_200_OK,
 )
 from schemas import (
-    BaseCheckDriftResponse,
     DetectorInputData,
+    DistanceBasedResponse,
     HealthResponse,
 )
 from settings import api_settings, detector_settings
 
-detector = load_detector(settings=detector_settings)
+detector = Detector(
+    settings=detector_settings,
+)
 
 
 @post(
     path="/check_drift",
     status_code=HTTP_200_OK,
 )
-async def check_drift(data: DetectorInputData) -> BaseCheckDriftResponse:
+async def check_drift(data: DetectorInputData) -> DistanceBasedResponse:
     """Check if drift is present.
 
     :param data: input data
@@ -34,10 +36,11 @@ async def check_drift(data: DetectorInputData) -> BaseCheckDriftResponse:
         values=data.values,
         alpha=data.alpha,
     )
+    check_drift_result["distance"] = check_drift_result["distance"].distance
     if data.return_input_values:
         check_drift_result["values"] = data.values.tolist()  # noqa: PD011
 
-    return BaseCheckDriftResponse(
+    return DistanceBasedResponse(
         **check_drift_result,
     )
 

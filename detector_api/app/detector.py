@@ -14,20 +14,24 @@ from utils import SingletonMeta
 class Detector(metaclass=SingletonMeta):
     """Detector class."""
 
-    def __init__(self: "Detector") -> None:
+    def __init__(self: "Detector", settings: DetectorSettings) -> None:
         """Init method."""
-        self.detector = None
+        logging.info("Loading drift detector...")
+        self.detector = self.load(
+            settings=settings,
+        )
+        logging.info("Drift detector loaded.")
 
     def load(self: "Detector", settings: DetectorSettings) -> DetectorBase:
         """Load drift detector.
 
-        :return detector metadata
-        :rtype: dict[str, str | None]
+        :return detector
+        :rtype: DetectorBase
         """
-        logging.info("Loading drift detector...")
-        self.detector = self._load(settings=settings)
-        logging.info("Drift detector loaded.")
-        return self
+        detector = self._load(
+            settings=settings,
+        )
+        return detector
 
     @staticmethod
     def _load(settings: DetectorSettings) -> DetectorBase:
@@ -60,14 +64,3 @@ class Detector(metaclass=SingletonMeta):
             "is_drift": callback_logs["permutation_test"]["p_value"] < alpha,
             "p_value": callback_logs["permutation_test"]["p_value"],
         }
-
-
-def load_detector(settings: DetectorSettings) -> Detector:
-    """Load drift detector.
-
-    :param settings: detector settings
-    :type settings: DetectorSettings
-    :return detector
-    :rtype: Detector
-    """
-    return Detector().load(settings=settings)
