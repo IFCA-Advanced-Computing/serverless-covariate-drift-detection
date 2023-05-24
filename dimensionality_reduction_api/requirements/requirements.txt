@@ -1,0 +1,6 @@
+litestar[standard]==2.0.0a7
+numpy==1.24.3
+--extra-index-url https://download.pytorch.org/whl/cpu
+torch==2.0.1
+torchvision==0.15.2
+Pillow==9.5.0

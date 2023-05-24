@@ -19,8 +19,14 @@ serve-dev:
 serve-prod:
 	gunicorn -b 0.0.0.0:5001 -w 1 -t 120 -c gunicorn_conf.py -k uvicorn.workers.UvicornWorker api.app.main:app
 
-build:
+build-data-drift-detector:
 	docker build -t data-drift-detection detector_api
 
-run:
+build-dimensionality-reduction:
+	docker build -t dimensionality-reduction dimensionality_reduction_api
+
+run-data-drift-detector:
 	docker run --name data-drift-detection -p 5001:8000 data-drift-detection
+
+run-dimensionality-reduction:
+	docker run --name dimensionality-reduction -p 5002:8000 dimensionality-reduction
