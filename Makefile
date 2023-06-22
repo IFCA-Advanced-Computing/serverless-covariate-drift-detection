@@ -13,14 +13,22 @@ install:
 tox:
 	$(VENV)/bin/tox
 
-build-data-drift-detector:
-	docker build -t ifcacomputing/data-drift-detection-api detector_api
+add-multi-arch-builder:
+	docker run --privileged --rm tonistiigi/binfmt --install all
+	docker buildx create --name drift-detection-builder --driver docker-container --bootstrap
+	docker buildx use drift-detection-builder
 
-build-dimensionality-reduction:
-	docker build -t ifcacomputing/dimensionality-reduction-api dimensionality_reduction_api
+remove-multi-arch-builder:
+	docker buildx rm drift-detection-builder
 
-build-model-inference:
-	docker build -t ifcacomputing/model-inference-api model_inference_api
+build-push-data-drift-detector:
+	docker buildx build --platform linux/amd64,linux/arm64 -t ifcacomputing/data-drift-detection-api --push detector_api
+
+build-push-dimensionality-reduction:
+	docker buildx build --platform linux/amd64,linux/arm64 -t ifcacomputing/dimensionality-reduction-api --push dimensionality_reduction_api
+
+build-push-model-inference:
+	docker buildx build --platform linux/amd64,linux/arm64 -t ifcacomputing/model-inference-api:latest --push model_inference_api
 
 run-data-drift-detector:
 	docker run --name data-drift-detection -p 5001:8000 ifcacomputing/data-drift-detection-api
@@ -30,12 +38,3 @@ run-dimensionality-reduction:
 
 run-model-inference:
 	docker run --name model-inference -p 5003:8000 ifcacomputing/model-inference-api
-
-push-data-drift-detector:
-	docker push ifcacomputing/data-drift-detection-api
-
-push-dimensionality-reduction:
-	docker push ifcacomputing/dimensionality-reduction-api
-
-push-model-inference:
-	docker push ifcacomputing/model-inference-api
