@@ -6,224 +6,89 @@ from pathlib import Path
 from typing import Any
 
 import numpy as np
+import pytorch_lightning as pl
 import torch
 import torchvision
 from frouros.callbacks import PermutationTestOnBatchData
 from frouros.detectors.data_drift import MMD
-from torch import nn
+from ml.mnist.utils.autoencoder import (
+    AutoEncoder,
+    AutoEncoderSystem,
+    encode_data,
+)
+from pytorch_lightning.callbacks import ModelCheckpoint
 
-from ml.mnist.utils.dr import Autoencoder, encode_data
-from ml.mnist.utils.model import CNN
-
-
-def set_seed(seed=31):
-    torch.backends.cudnn.deterministic = True
-    torch.backends.cudnn.benchmark = False
-    torch.manual_seed(seed)
-    np.random.seed(seed)
+from ml.mnist.utils.cnn import CNN, CNNSystem
 
 
-def train(
+def train_cnn(
+        cnn: pl.LightningModule,
         epochs: int,
-        data_loader: torch.utils.data.DataLoader,
-        device: str,
+        train_data_loader: torch.utils.data.DataLoader,
+        val_data_loader: torch.utils.data.DataLoader,
 ) -> torch.nn.Module:
-    model = torch.compile(
-        model=CNN(), options={},
-    ).to(device)
-    loss_fn = nn.CrossEntropyLoss()
-    optimizer = torch.optim.Adam(
-        params=model.parameters(),
-        lr=0.001,
+    cnn_system = CNNSystem(
+        cnn=cnn,
     )
-
-    for epoch in range(1, epochs+1):
-        logger.info(f"Epoch {epoch}:")
-        running_loss = 0.0
-        for i, (inputs, labels) in enumerate(data_loader, start=1):
-            optimizer.zero_grad()
-
-            outputs = model(inputs)
-
-            loss = loss_fn(outputs, labels)
-            loss.backward()
-
-            optimizer.step()
-
-            running_loss += loss.item()
-            if i % 100 == 0:
-                logger.info(f"  Batch {i} loss: {running_loss / 100:.4f}")  # loss per batch
-                running_loss = 0.0
-    return model
-
-
-def contractive_loss(outputs_e, outputs, inputs, lamda = 1e-4):
-    assert outputs.shape == inputs.shape, f"outputs.shape : {outputs.shape} != inputs.shape : {inputs.shape}"
-    criterion = nn.MSELoss()
-    loss1 = criterion(outputs, inputs)
-
-    outputs_e.backward(torch.ones(outputs_e.size()), retain_graph=True)
-    loss2 = torch.sqrt(torch.sum(torch.pow(inputs.grad, 2)))
-    inputs.grad.data.zero_()
-
-    loss = loss1 + (lamda*loss2)
-    return loss
-
-
-def main(
-        train_images_dir: str,
-        autoencoder_batch_size: int,
-        autoencoder_epochs: int,
-        encoder_output_path: Path,
-        detector_batch_size: int,
-        detector_chunk_size: int,
-        detector_output_path: Path,
-        model_batch_size: int,
-        model_epochs: int,
-        model_output_path: Path,
-        transform_output_path: Path,
-        permutation_test_number: int,
-        permutation_test_num_jobs: int,
-        latent_dim: int,
-        random_state: int,
-) -> None:
-    set_seed(seed=random_state)
-    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-
-    transform = torchvision.transforms.Compose(
-        [
-            torchvision.transforms.Grayscale(),  # Convert to grayscale (1 channel)
-            torchvision.transforms.ToTensor(),  # Convert images to the range [0.0, 1.0] (normalize)
+    cnn_checkpoint_callback = ModelCheckpoint(
+        monitor="val_cnn_loss",
+    )
+    cnn_trainer = pl.Trainer(
+        max_epochs=epochs,
+        callbacks=[
+            cnn_checkpoint_callback,
         ],
+        deterministic=True,
     )
-    logger.info(f"Saving transform to {transform_output_path}...")
-    torch.save(
-        obj=transform,
-        f=transform_output_path,
+    cnn_trainer.fit(
+        model=cnn_system,
+        train_dataloaders=train_data_loader,
+        val_dataloaders=val_data_loader,
     )
-
-    train_all_dataset = torchvision.datasets.MNIST(
-        root=train_images_dir,
-        train=True,
-        download=True,
-        transform=transform,
+    # Load best model
+    logging.info(
+        f"Best model: {cnn_checkpoint_callback.best_model_path}",
     )
+    cnn_system = CNNSystem.load_from_checkpoint(
+        checkpoint_path=cnn_checkpoint_callback.best_model_path,
+        cnn=cnn,
+    )
+    return cnn_system
 
-    train_all_dataset_size = len(train_all_dataset)
-    train_dataset_size = int(train_all_dataset_size * 0.5)
-    ref_dataset_size = train_all_dataset_size - train_dataset_size
 
-    train_dataset, ref_dataset = torch.utils.data.random_split(
-        dataset=train_all_dataset,
-        lengths=[
-            train_dataset_size,
-            ref_dataset_size,
+def train_autoencoder(
+        autoencoder: pl.LightningModule,
+        epochs: int,
+        train_data_loader: torch.utils.data.DataLoader,
+        val_data_loader: torch.utils.data.DataLoader,
+) -> AutoEncoderSystem:
+    autoencoder_system = AutoEncoderSystem(
+        autoencoder=autoencoder,
+    )
+    autoencoder_checkpoint_callback = ModelCheckpoint(
+        monitor="val_autoencoder_loss",
+    )
+    autoencoder_trainer = pl.Trainer(
+        max_epochs=epochs,
+        callbacks=[
+            autoencoder_checkpoint_callback,
         ],
-        generator=torch.Generator().manual_seed(random_state),
+        deterministic=True,
     )
-
-    train_data_loader = torch.utils.data.DataLoader(  # 30000 samples
-        dataset=train_dataset,
-        batch_size=model_batch_size,
-        shuffle=True,
+    autoencoder_trainer.fit(
+        model=autoencoder_system,
+        train_dataloaders=train_data_loader,
+        val_dataloaders=val_data_loader,
     )
-
-    logger.info("Training model...")
-    model = train(
-        epochs=model_epochs,
-        data_loader=train_data_loader,
-        device=device,
+    # Load best model
+    logging.info(
+        f"Best model: {autoencoder_checkpoint_callback.best_model_path}",
     )
-
-    logger.info(f"Saving model to {model_output_path}...")
-    torch.save(
-        obj=model.state_dict(),
-        f=model_output_path,
+    autoencoder_system = AutoEncoderSystem.load_from_checkpoint(
+        checkpoint_path=autoencoder_checkpoint_callback.best_model_path,
+        autoencoder=autoencoder,
     )
-
-    ref_data_loader = torch.utils.data.DataLoader(  # 30000 samples
-        dataset=ref_dataset,
-        batch_size=autoencoder_batch_size,
-        shuffle=False,
-    )
-
-    logger.info("Training dimensionality reduction autoencoder...")
-    autoencoder = train_dr(
-        autoencoder_epochs=autoencoder_epochs,
-        latent_dim=latent_dim,
-        data_loader=ref_data_loader,
-        device=device,
-    )
-
-    logger.info(f"Saving encoder to {encoder_output_path}...")
-    torch.save(
-        obj=autoencoder.encoder.state_dict(),
-        f=encoder_output_path,
-    )
-
-    ref_data_loader = torch.utils.data.DataLoader(  # 30000 samples
-        dataset=ref_dataset,
-        batch_size=detector_batch_size,
-        shuffle=False,
-    )
-
-    logger.info("Encoding reference data...")
-    X_ref_encoded, _ = encode_data(
-        encoder=autoencoder.encoder,
-        data_loader=ref_data_loader,
-    )
-
-    logger.info("Fitting detector...")
-    detector = fit_detector(
-        X_ref=X_ref_encoded,
-        chunk_size=detector_chunk_size,
-        permutation_test_num_jobs=permutation_test_num_jobs,
-        permutation_test_number=permutation_test_number,
-        random_state=random_state,
-    )
-
-    logger.info(f"Saving detector to {detector_output_path}...")
-    save_obj(
-        obj=detector,
-        path=detector_output_path,
-    )
-
-
-def train_dr(
-        autoencoder_epochs: int,
-        latent_dim: int,
-        data_loader: torch.utils.data.DataLoader,
-        device: str,
-) -> Autoencoder:
-    autoencoder = torch.compile(
-        Autoencoder(
-            latent_dim=latent_dim,
-        ),
-    ).to(device)
-    optimizer = torch.optim.Adam(
-        params=autoencoder.parameters(),
-        lr=0.001,
-    )
-    for _epoch in range(1, autoencoder_epochs + 1):
-        running_loss = 0.0
-        for i, (inputs, _) in enumerate(data_loader, start=1):
-            inputs.requires_grad = True
-            inputs.retain_grad()
-
-            outputs_e, outputs = autoencoder(inputs)
-            loss = contractive_loss(outputs_e, outputs, inputs)
-
-            inputs.requires_grad = False
-
-            optimizer.zero_grad()
-            loss.backward()
-            optimizer.step()
-
-            running_loss += loss.item()
-            if i % 100 == 0:
-                logger.info(f"  Batch {i} loss: {running_loss / 100:.4f}")  # loss per batch
-                running_loss = 0.0
-    return autoencoder
+    return autoencoder_system
 
 
 def save_obj(
@@ -260,6 +125,156 @@ def fit_detector(
     return detector
 
 
+def main(
+        train_images_dir: str,
+        autoencoder_batch_size: int,
+        autoencoder_epochs: int,
+        encoder_output_path: Path,
+        detector_batch_size: int,
+        detector_chunk_size: int,
+        detector_output_path: Path,
+        cnn_batch_size: int,
+        cnn_epochs: int,
+        cnn_output_path: Path,
+        transform_output_path: Path,
+        permutation_test_number: int,
+        permutation_test_num_jobs: int,
+        latent_dim: int,
+        random_state: int,
+) -> None:
+    pl.seed_everything(
+        seed=31,
+        workers=True,
+    )
+
+    transform = torchvision.transforms.Compose(
+        [
+            torchvision.transforms.Grayscale(),  # Convert to grayscale (1 channel)
+            torchvision.transforms.ToTensor(),  # Convert images to the range [0.0, 1.0] (normalize)
+        ],
+    )
+    logger.info(f"Saving transform to {transform_output_path}...")
+    torch.save(
+        obj=transform,
+        f=transform_output_path,
+    )
+
+    train_all_dataset = torchvision.datasets.MNIST(
+        root=train_images_dir,
+        train=True,
+        download=True,
+        transform=transform,
+    )
+
+    train_cnn_fraction = 0.6
+    val_cnn_fraction = 0.1
+    train_autoencoder_fraction = 0.15
+    val_autoencoder_dataset_fraction = 0.05
+    detector_fraction = 0.1
+
+    (
+        train_cnn_dataset,
+        val_cnn_dataset,
+        train_autoencoder_dataset,
+        val_autoencoder_dataset,
+        detector_dataset,
+    ) = torch.utils.data.random_split(
+        dataset=train_all_dataset,
+        lengths=[
+            train_cnn_fraction,
+            val_cnn_fraction,
+            train_autoencoder_fraction,
+            val_autoencoder_dataset_fraction,
+            detector_fraction,
+        ],
+        generator=torch.Generator().manual_seed(random_state),
+    )
+
+    train_cnn_data_loader = torch.utils.data.DataLoader(  # 30000 samples
+        dataset=train_cnn_dataset,
+        batch_size=cnn_batch_size,
+        shuffle=True,
+    )
+    val_cnn_data_loader = torch.utils.data.DataLoader(  # 30000 samples
+        dataset=val_cnn_dataset,
+        batch_size=cnn_batch_size,
+        shuffle=False,
+    )
+
+    cnn = CNN(
+        num_classes=10,
+    )
+    logger.info("Training CNN...")
+    cnn_system = train_cnn(
+        cnn=cnn,
+        epochs=cnn_epochs,
+        train_data_loader=train_cnn_data_loader,
+        val_data_loader=val_cnn_data_loader,
+    )
+
+    logger.info(f"Saving CNN to {cnn_output_path}...")
+    torch.save(
+        obj=cnn_system.cnn.state_dict(),
+        f=cnn_output_path,
+    )
+
+    train_autoencoder_data_loader = torch.utils.data.DataLoader(  # 30000 samples
+        dataset=train_autoencoder_dataset,
+        batch_size=autoencoder_batch_size,
+        shuffle=True,
+    )
+    val_autoencoder_data_loader = torch.utils.data.DataLoader(  # 30000 samples
+        dataset=val_autoencoder_dataset,
+        batch_size=autoencoder_batch_size,
+        shuffle=False,
+    )
+
+    autoencoder = AutoEncoder(
+        latent_dim=latent_dim,
+    )
+    logger.info("Training dimensionality reduction autoencoder...")
+    autoencoder_system = train_autoencoder(
+        autoencoder=autoencoder,
+        epochs=autoencoder_epochs,
+        train_data_loader=train_autoencoder_data_loader,
+        val_data_loader=val_autoencoder_data_loader,
+    )
+    encoder = autoencoder_system.autoencoder.encoder
+
+    logger.info(f"Saving encoder to {encoder_output_path}...")
+    torch.save(
+        obj=encoder.state_dict(),
+        f=encoder_output_path,
+    )
+
+    detector_data_loader = torch.utils.data.DataLoader(  # 30000 samples
+        dataset=detector_dataset,
+        batch_size=detector_batch_size,
+        shuffle=False,
+    )
+
+    logger.info("Encoding reference data...")
+    X_ref_encoded, _ = encode_data(
+        encoder=encoder,
+        data_loader=detector_data_loader,
+    )
+
+    logger.info("Fitting detector...")
+    detector = fit_detector(
+        X_ref=X_ref_encoded,
+        chunk_size=detector_chunk_size,
+        permutation_test_num_jobs=permutation_test_num_jobs,
+        permutation_test_number=permutation_test_number,
+        random_state=random_state,
+    )
+
+    logger.info(f"Saving detector to {detector_output_path}...")
+    save_obj(
+        obj=detector,
+        path=detector_output_path,
+    )
+
+
 if __name__ == "__main__":
     logging.basicConfig(
         format="%(asctime)s,%(msecs)03d %(levelname)-8s [%(filename)s:%(lineno)d] %(message)s",
@@ -270,18 +285,18 @@ if __name__ == "__main__":
 
     parser = argparse.ArgumentParser(description="MNIST training.")
     parser.add_argument("-ti", "--TrainImagesDir", type=str, help="Train images directory", default="/tmp/mnist/train/")
-    parser.add_argument("-mb", "--ModelBatchSize", type=int, help="Model batch size", default=64)
-    parser.add_argument("-me", "--ModelEpochs", type=int, help="Model epochs", default=5)
-    parser.add_argument("-mo", "--ModelOutputPath", type=str, help="Model output path", default="objects/model.pt")
+    parser.add_argument("-cb", "--CNNBatchSize", type=int, help="CNN batch size", default=128)
+    parser.add_argument("-ce", "--CNNEpochs", type=int, help="CNN epochs", default=10)
+    parser.add_argument("-co", "--CNNOutputPath", type=str, help="CNN output path", default="objects/cnn.pt")
     parser.add_argument("-db", "--DetectorBatchSize", type=int, help="Detector batch size", default=8)
     parser.add_argument("-dc", "--DetectorChunkSize", type=int, help="Detector chunk size", default=100)
     parser.add_argument("-do", "--DetectorOutputPath", type=str, help="Detector output path", default="objects/detector.pkl")
-    parser.add_argument("-ab", "--AutoencoderBatchSize", type=int, help="Autoencoder batch size", default=64)
-    parser.add_argument("-ae", "--AutoencoderEpochs", type=int, help="Autoencoder epochs", default=5)
+    parser.add_argument("-ab", "--AutoencoderBatchSize", type=int, help="Autoencoder batch size", default=128)
+    parser.add_argument("-ae", "--AutoencoderEpochs", type=int, help="Autoencoder epochs", default=10)
     parser.add_argument("-eo", "--EncoderOutputPath", type=str, help="Encoder output path", default="objects/encoder.pt")
     parser.add_argument("-to", "--TransformOutputPath", type=str, help="Transform output path", default="objects/transformer.pt")
     parser.add_argument("-ld", "--LatentDim", type=int, help="Latent dimension", default=5)
-    parser.add_argument("-pn", "--PermutationTestNumber", type=int, help="Number of permutation tests", default=100)
+    parser.add_argument("-pn", "--PermutationTestNumber", type=int, help="Number of permutation tests", default=5)
     parser.add_argument("-pp", "--PermutationTestNumJobs", type=int, help="Number of permutation test jobs", default=multiprocessing.cpu_count())
     parser.add_argument("-rs", "--RandomState", type=int, help="Random state", default=31)
 
@@ -289,9 +304,9 @@ if __name__ == "__main__":
 
     main(
         train_images_dir=args.TrainImagesDir,
-        model_batch_size=args.ModelBatchSize,
-        model_epochs=args.ModelEpochs,
-        model_output_path=Path(args.ModelOutputPath),
+        cnn_batch_size=args.CNNBatchSize,
+        cnn_epochs=args.CNNEpochs,
+        cnn_output_path=Path(args.CNNOutputPath),
         detector_batch_size=args.DetectorBatchSize,
         detector_chunk_size=args.DetectorChunkSize,
         detector_output_path=Path(args.DetectorOutputPath),

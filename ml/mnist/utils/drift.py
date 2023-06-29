@@ -32,12 +32,12 @@ def save_images(data_loader, target_dir: Path) -> None:
 
 transformations = [
     (
-        "GaussianBlur(kernel_size=(5, 9), sigma=0.1)",
+        "GaussianBlur(kernel_size=(5, 9), sigma=0.25)",
         torchvision.transforms.Compose(
             [
                 torchvision.transforms.GaussianBlur(
                     kernel_size=(5, 9),
-                    sigma=0.1),
+                    sigma=0.25),
             ],
         ),
     ),
@@ -82,6 +82,17 @@ transformations = [
         ),
     ),
     (
+        "ElasticTransform(alpha=12.5, sigma=5.0)",
+        torchvision.transforms.Compose(
+            [
+                torchvision.transforms.ElasticTransform(
+                    alpha=12.5,
+                    sigma=5.0,
+                ),
+            ],
+        ),
+    ),
+    (
         "ElasticTransform(alpha=25.0, sigma=5.0)",
         torchvision.transforms.Compose(
             [
@@ -104,22 +115,22 @@ transformations = [
         ),
     ),
     (
-        "ElasticTransform(alpha=75.0, sigma=5.0)",
-        torchvision.transforms.Compose(
-            [
-                torchvision.transforms.ElasticTransform(
-                    alpha=75.0,
-                    sigma=5.0,
-                ),
-            ],
-        ),
-    ),
-(
         "ElasticTransform(alpha=100.0, sigma=5.0)",
         torchvision.transforms.Compose(
             [
                 torchvision.transforms.ElasticTransform(
                     alpha=100.0,
+                    sigma=5.0,
+                ),
+            ],
+        ),
+    ),
+    (
+        "ElasticTransform(alpha=200.0, sigma=5.0)",
+        torchvision.transforms.Compose(
+            [
+                torchvision.transforms.ElasticTransform(
+                    alpha=200.0,
                     sigma=5.0,
                 ),
             ],
