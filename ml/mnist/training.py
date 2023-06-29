@@ -11,14 +11,14 @@ import torch
 import torchvision
 from frouros.callbacks import PermutationTestDistanceBased
 from frouros.detectors.data_drift import MMD
-from ml.mnist.utils.autoencoder import (
+from pytorch_lightning.callbacks import ModelCheckpoint
+
+from utils.autoencoder import (
     AutoEncoder,
     AutoEncoderSystem,
     encode_data,
 )
-from pytorch_lightning.callbacks import ModelCheckpoint
-
-from ml.mnist.utils.cnn import CNN, CNNSystem
+from utils.cnn import CNN, CNNSystem
 
 
 def train_cnn(
@@ -282,19 +282,20 @@ if __name__ == "__main__":
         level=logging.INFO,
     )
     logger = logging.getLogger(__name__)
+    current_file_path = Path(__file__).parent.resolve()
 
     parser = argparse.ArgumentParser(description="MNIST training.")
     parser.add_argument("-ti", "--TrainImagesDir", type=str, help="Train images directory", default="/tmp/mnist/train/")
     parser.add_argument("-cb", "--CNNBatchSize", type=int, help="CNN batch size", default=128)
     parser.add_argument("-ce", "--CNNEpochs", type=int, help="CNN epochs", default=10)
-    parser.add_argument("-co", "--CNNOutputPath", type=str, help="CNN output path", default="objects/cnn.pt")
+    parser.add_argument("-co", "--CNNOutputPath", type=str, help="CNN output path", default=Path(current_file_path, "objects/cnn.pt"))
     parser.add_argument("-db", "--DetectorBatchSize", type=int, help="Detector batch size", default=8)
     parser.add_argument("-dc", "--DetectorChunkSize", type=int, help="Detector chunk size", default=100)
-    parser.add_argument("-do", "--DetectorOutputPath", type=str, help="Detector output path", default="objects/detector.pkl")
+    parser.add_argument("-do", "--DetectorOutputPath", type=str, help="Detector output path", default=Path(current_file_path, "objects/detector.pkl"))
     parser.add_argument("-ab", "--AutoencoderBatchSize", type=int, help="Autoencoder batch size", default=128)
     parser.add_argument("-ae", "--AutoencoderEpochs", type=int, help="Autoencoder epochs", default=10)
-    parser.add_argument("-eo", "--EncoderOutputPath", type=str, help="Encoder output path", default="objects/encoder.pt")
-    parser.add_argument("-to", "--TransformOutputPath", type=str, help="Transform output path", default="objects/transformer.pt")
+    parser.add_argument("-eo", "--EncoderOutputPath", type=str, help="Encoder output path", default=Path(current_file_path, "objects/encoder.pt"))
+    parser.add_argument("-to", "--TransformOutputPath", type=str, help="Transform output path", default=Path(current_file_path, "objects/transformer.pt"))
     parser.add_argument("-ld", "--LatentDim", type=int, help="Latent dimension", default=5)
     parser.add_argument("-pn", "--PermutationTestNumber", type=int, help="Number of permutation tests", default=5)
     parser.add_argument("-pp", "--PermutationTestNumJobs", type=int, help="Number of permutation test jobs", default=multiprocessing.cpu_count())
