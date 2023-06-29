@@ -9,7 +9,7 @@ import numpy as np
 import pytorch_lightning as pl
 import torch
 import torchvision
-from frouros.callbacks import PermutationTestOnBatchData
+from frouros.callbacks import PermutationTestDistanceBased
 from frouros.detectors.data_drift import MMD
 from ml.mnist.utils.autoencoder import (
     AutoEncoder,
@@ -111,7 +111,7 @@ def fit_detector(
 ) -> MMD:
     detector = MMD(
         callbacks=[
-            PermutationTestOnBatchData(
+            PermutationTestDistanceBased(
                 num_permutations=permutation_test_number,
                 random_state=random_state,
                 num_jobs=permutation_test_num_jobs,
