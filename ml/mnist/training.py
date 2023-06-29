@@ -146,6 +146,7 @@ def main(
         seed=31,
         workers=True,
     )
+    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
     transform = torchvision.transforms.Compose(
         [
@@ -239,8 +240,8 @@ def main(
         train_data_loader=train_autoencoder_data_loader,
         val_data_loader=val_autoencoder_data_loader,
     )
-    encoder = autoencoder_system.autoencoder.encoder
 
+    encoder = autoencoder_system.autoencoder.encoder
     logger.info(f"Saving encoder to {encoder_output_path}...")
     torch.save(
         obj=encoder.state_dict(),
@@ -255,7 +256,7 @@ def main(
 
     logger.info("Encoding reference data...")
     X_ref_encoded, _ = encode_data(
-        encoder=encoder,
+        encoder=encoder.to(device),
         data_loader=detector_data_loader,
     )
 
