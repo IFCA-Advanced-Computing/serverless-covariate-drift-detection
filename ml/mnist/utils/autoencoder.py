@@ -1,6 +1,7 @@
-"""Dimensionality reduction models for MNIST dataset."""
+"""Autoencoder model for MNIST dataset."""
 
 import numpy as np
+import pytorch_lightning as pl
 import torch
 from torch import nn
 
@@ -67,7 +68,7 @@ class Decoder(nn.Module):
         return x
 
 
-class Autoencoder(nn.Module):
+class AutoEncoder(nn.Module):
 
     def __init__(self, latent_dim: int) -> None:
         super().__init__()
@@ -82,6 +83,48 @@ class Autoencoder(nn.Module):
         encoded = self.encoder(x)
         decoded = self.decoder(encoded)
         return encoded, decoded
+
+
+class AutoEncoderSystem(pl.LightningModule):
+
+    def __init__(self, autoencoder: nn.Module) -> None:
+        super().__init__()
+        self.autoencoder = autoencoder
+        self.loss_fn = nn.MSELoss()
+
+    def forward(self, x):
+        output = self.autoencoder(x)
+        return output
+
+    def configure_optimizers(self):
+        optimizer = torch.optim.AdamW(self.parameters(), lr=1e-3)
+        lr_scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(
+            optimizer=optimizer,
+            patience=5,
+        )
+        return {
+            "optimizer": optimizer,
+            "lr_scheduler": {
+                "scheduler": lr_scheduler,
+                "monitor": "val_autoencoder_loss",
+            },
+        }
+
+    def training_step(self, batch, batch_idx):
+        # training_step defines the train loop.
+        # it is independent of forward
+        x, y = batch
+        _, x_hat = self.autoencoder(x)
+        loss = self.loss_fn(x_hat, x)
+        self.log("train_autoencoder_loss", loss)
+        return loss
+
+    def validation_step(self, batch, batch_idx):
+        # this is the validation loop
+        x, y = batch
+        _, x_hat = self.autoencoder(x)
+        val_loss = self.loss_fn(x_hat, x)
+        self.log("val_autoencoder_loss", val_loss)
 
 
 def encode_data(encoder, data_loader) -> tuple[np.ndarray, np.ndarray]:
