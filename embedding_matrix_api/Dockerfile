@@ -1,5 +1,5 @@
 FROM python:3.10-slim
-LABEL author="Jaime Céspedes Sisniega <cespedes@ifca.unican.es>"
+LABEL author="Vicente Rodriguez Benitez <vrodben1@im3.upv.es>"
 
 WORKDIR /app
 
@@ -10,10 +10,11 @@ RUN apt-get -y update && \
     adduser --no-create-home --shell /bin/false --disabled-password --uid 1001 --system --group app && \
     pip install --upgrade -r requirements.txt --no-cache-dir && \
     rm requirements.txt
-RUN  pip install Pillow
+    
+    
 
 COPY app ./
 
 USER app
 
-CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8000", "--workers", "1"]
+CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8000", "--workers", "4"]
