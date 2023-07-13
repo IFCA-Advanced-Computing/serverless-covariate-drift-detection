@@ -22,7 +22,7 @@ class DetectorSettings(BaseSettings):
     Set detector variables to be used
     """
 
-    FILE_PATH: Path = Path("detector/detector.pkl")
+    FILE_PATH: Path = Path("objects/detector.pkl")
 
 
 api_settings = APISettings()

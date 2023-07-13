@@ -22,7 +22,7 @@ class ModelSettings(BaseSettings):
     Set detector variables to be used
     """
 
-    FILE_PATH: Path = Path("objects/model.pt")
+    FILE_PATH: Path = Path("objects/cnn.pt")
 
 
 class TransformerSettings(BaseSettings):
