@@ -1,3 +1,4 @@
+#multi-platform execution of services
 .ONESHELL:
 SHELL := /bin/bash
 
@@ -28,7 +29,9 @@ build-push-dimensionality-reduction:
 	docker buildx build --platform linux/amd64,linux/arm64 -t ifcacomputing/dimensionality-reduction-api --push dimensionality_reduction_api
 
 build-push-model-inference:
-	docker buildx build --platform linux/amd64,linux/arm64 -t ifcacomputing/model-inference-api:latest --push model_inference_api
+	docker build -t ghcr.io/grycap/mls-arm-api model_inference_api
+	docker push ghcr.io/grycap/mls-arm-api
+	docker buildx build --platform linux/amd64,linux/arm64 -t ghcr.io/grycap/mls-arm-api --push model_inference_api
 
 run-data-drift-detector:
 	docker run --name data-drift-detection -p 5001:8000 ifcacomputing/data-drift-detection-api
@@ -38,3 +41,23 @@ run-dimensionality-reduction:
 
 run-model-inference:
 	docker run --name model-inference -p 5003:8000 ifcacomputing/model-inference-api
+    
+mls:
+	docker build -t ghcr.io/grycap/mls-arm-api model_inference_api
+	docker push ghcr.io/grycap/mls-arm-api
+	docker buildx build --platform linux/amd64,linux/arm64 -t ghcr.io/grycap/mls-arm-api --push model_inference_api
+	    
+dds:
+	docker build -t ghcr.io/grycap/dds-arm-api detector_api
+	docker push ghcr.io/grycap/dds-arm-api
+	docker buildx build --platform linux/amd64,linux/arm64 -t ghcr.io/grycap/dds-arm-api --push detector_api
+	    
+emc:
+	docker build -t ghcr.io/grycap/emc-arm-api embedding_matrix
+	docker push ghcr.io/grycap/emc-arm-api
+	docker buildx build --platform linux/amd64,linux/arm64 -t ghcr.io/grycap/emc-arm-api --push embedding_matrix
+drs:
+	docker build -t ghcr.io/grycap/drs-arm-api dimensionality_reduction_api
+	docker push ghcr.io/grycap/drs-arm-api
+	docker buildx build --platform linux/amd64,linux/arm64 -t ghcr.io/grycap/drs-arm-api --push dimensionality_reduction_api
+	

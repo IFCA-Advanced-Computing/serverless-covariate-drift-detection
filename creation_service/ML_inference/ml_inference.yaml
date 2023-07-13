@@ -1,0 +1,30 @@
+functions:
+  oscar:
+    - oscar-cluster:
+        name: mls-service
+        memory: 2Gi
+        cpu: '2'
+        image: ghcr.io/grycap/mls-arm-api
+        script: script.sh
+        log_level: INFO
+        input:
+          - storage_provider: minio.default
+            path: images/input
+        output:
+          - suffix:
+              - txt
+            storage_provider: minio.default
+            path: mls/output
+          - suffix:
+              - png
+            storage_provider: minio.minio1
+            path: drs/input
+          
+storage_providers:
+  minio:
+    minio1:
+      endpoint: 'https://minio.frosty-grothendieck5.im.grycap.net'
+      region: us-east-1
+      access_key: minio
+      secret_key: minio123
+      verify: false

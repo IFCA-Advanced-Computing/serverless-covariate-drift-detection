@@ -1,0 +1,15 @@
+functions:
+  oscar:
+    - oscar-cluster1:
+        name: emc-service
+        memory: 2Gi
+        cpu: '2'
+        image: ghcr.io/grycap/emc-arm-api
+        script: script.sh
+        log_level: INFO
+        input:
+          - storage_provider: minio
+            path: drs/output
+        output:
+          - storage_provider: minio
+            path: emc/output
