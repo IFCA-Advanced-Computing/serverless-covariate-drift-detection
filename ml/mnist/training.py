@@ -129,14 +129,14 @@ def main(
         train_images_dir: str,
         autoencoder_batch_size: int,
         autoencoder_epochs: int,
-        encoder_output_path: Path,
+        encoder_output_path: list[Path],
         detector_batch_size: int,
         detector_chunk_size: int,
-        detector_output_path: Path,
+        detector_output_path: list[Path],
         cnn_batch_size: int,
         cnn_epochs: int,
-        cnn_output_path: Path,
-        transform_output_path: Path,
+        cnn_output_path: list[Path],
+        transform_output_path: list[Path],
         permutation_test_number: int,
         permutation_test_num_jobs: int,
         latent_dim: int,
@@ -154,11 +154,12 @@ def main(
             torchvision.transforms.ToTensor(),  # Convert images to the range [0.0, 1.0] (normalize)
         ],
     )
-    logger.info(f"Saving transform to {transform_output_path}...")
-    torch.save(
-        obj=transform,
-        f=transform_output_path,
-    )
+    for output_path in transform_output_path:
+        logger.info(f"Saving transform to {output_path}...")
+        torch.save(
+            obj=transform,
+            f=output_path,
+        )
 
     train_all_dataset = torchvision.datasets.MNIST(
         root=train_images_dir,
@@ -213,11 +214,12 @@ def main(
         val_data_loader=val_cnn_data_loader,
     )
 
-    logger.info(f"Saving CNN to {cnn_output_path}...")
-    torch.save(
-        obj=cnn_system.cnn.state_dict(),
-        f=cnn_output_path,
-    )
+    for output_path in cnn_output_path:
+        logger.info(f"Saving CNN to {output_path}...")
+        torch.save(
+            obj=cnn_system.cnn.state_dict(),
+            f=output_path,
+        )
 
     train_autoencoder_data_loader = torch.utils.data.DataLoader(  # 30000 samples
         dataset=train_autoencoder_dataset,
@@ -242,11 +244,12 @@ def main(
     )
 
     encoder = autoencoder_system.autoencoder.encoder
-    logger.info(f"Saving encoder to {encoder_output_path}...")
-    torch.save(
-        obj=encoder.state_dict(),
-        f=encoder_output_path,
-    )
+    for output_path in encoder_output_path:
+        logger.info(f"Saving encoder to {output_path}...")
+        torch.save(
+            obj=encoder.state_dict(),
+            f=output_path,
+        )
 
     detector_data_loader = torch.utils.data.DataLoader(  # 30000 samples
         dataset=detector_dataset,
@@ -269,11 +272,12 @@ def main(
         random_state=random_state,
     )
 
-    logger.info(f"Saving detector to {detector_output_path}...")
-    save_obj(
-        obj=detector,
-        path=detector_output_path,
-    )
+    for output_path in detector_output_path:
+        logger.info(f"Saving detector to {output_path}...")
+        save_obj(
+            obj=detector,
+            path=output_path,
+        )
 
 
 if __name__ == "__main__":
@@ -281,22 +285,28 @@ if __name__ == "__main__":
         format="%(asctime)s,%(msecs)03d %(levelname)-8s [%(filename)s:%(lineno)d] %(message)s",
         datefmt="%Y-%m-%d:%H:%M:%S",
         level=logging.INFO,
+        force=True,
     )
     logger = logging.getLogger(__name__)
+
     current_file_path = Path(__file__).parent.resolve()
+    root_path = Path(__file__).parent.parent.parent.resolve()
+    model_inference_objects_path = Path(root_path, "model_inference_api/app/objects/")
+    detector_objects_path = Path(root_path, "detector_api/app/objects/")
+    dimensionality_reduction_objects_path = Path(root_path, "dimensionality_reduction_api/app/objects/")
 
     parser = argparse.ArgumentParser(description="MNIST training.")
     parser.add_argument("-ti", "--TrainImagesDir", type=str, help="Train images directory", default="/tmp/mnist/train/")
     parser.add_argument("-cb", "--CNNBatchSize", type=int, help="CNN batch size", default=128)
-    parser.add_argument("-ce", "--CNNEpochs", type=int, help="CNN epochs", default=100)
-    parser.add_argument("-co", "--CNNOutputPath", type=str, help="CNN output path", default=Path(current_file_path, "objects/cnn.pt"))
+    parser.add_argument("-ce", "--CNNEpochs", type=int, help="CNN epochs", default=50)
+    parser.add_argument("-co", "--CNNOutputPath", nargs="+", type=list[str], help="CNN output path", default=[Path(model_inference_objects_path, "cnn.pt"), Path(current_file_path, "objects/cnn.pt")])
     parser.add_argument("-db", "--DetectorBatchSize", type=int, help="Detector batch size", default=8)
     parser.add_argument("-dc", "--DetectorChunkSize", type=int, help="Detector chunk size", default=100)
-    parser.add_argument("-do", "--DetectorOutputPath", type=str, help="Detector output path", default=Path(current_file_path, "objects/detector.pkl"))
+    parser.add_argument("-do", "--DetectorOutputPath", nargs="+", type=list[str], help="Detector output path", default=[Path(detector_objects_path, "detector.pkl"), Path(current_file_path, "objects/detector.pkl")])
     parser.add_argument("-ab", "--AutoencoderBatchSize", type=int, help="Autoencoder batch size", default=128)
-    parser.add_argument("-ae", "--AutoencoderEpochs", type=int, help="Autoencoder epochs", default=100)
-    parser.add_argument("-eo", "--EncoderOutputPath", type=str, help="Encoder output path", default=Path(current_file_path, "objects/encoder.pt"))
-    parser.add_argument("-to", "--TransformOutputPath", type=str, help="Transform output path", default=Path(current_file_path, "objects/transformer.pt"))
+    parser.add_argument("-ae", "--AutoencoderEpochs", type=int, help="Autoencoder epochs", default=50)
+    parser.add_argument("-eo", "--EncoderOutputPath", nargs="+", type=list[str], help="Encoder output path", default=[Path(dimensionality_reduction_objects_path, "encoder.pt"), Path(current_file_path, "objects/encoder.pt")])
+    parser.add_argument("-to", "--TransformOutputPath", nargs="+", type=list[str], help="Transform output path", default=[Path(model_inference_objects_path, "transformer.pt"), Path(dimensionality_reduction_objects_path, "transformer.pt"), Path(current_file_path, "objects/transformer.pt")])
     parser.add_argument("-ld", "--LatentDim", type=int, help="Latent dimension", default=5)
     parser.add_argument("-pn", "--PermutationTestNumber", type=int, help="Number of permutation tests", default=100)
     parser.add_argument("-pp", "--PermutationTestNumJobs", type=int, help="Number of permutation test jobs", default=multiprocessing.cpu_count())
@@ -308,14 +318,14 @@ if __name__ == "__main__":
         train_images_dir=args.TrainImagesDir,
         cnn_batch_size=args.CNNBatchSize,
         cnn_epochs=args.CNNEpochs,
-        cnn_output_path=Path(args.CNNOutputPath),
+        cnn_output_path=args.CNNOutputPath,
         detector_batch_size=args.DetectorBatchSize,
         detector_chunk_size=args.DetectorChunkSize,
-        detector_output_path=Path(args.DetectorOutputPath),
+        detector_output_path=args.DetectorOutputPath,
         autoencoder_batch_size=args.AutoencoderBatchSize,
         autoencoder_epochs=args.AutoencoderEpochs,
-        encoder_output_path=Path(args.EncoderOutputPath),
-        transform_output_path=Path(args.TransformOutputPath),
+        encoder_output_path=args.EncoderOutputPath,
+        transform_output_path=args.TransformOutputPath,
         latent_dim=args.LatentDim,
         permutation_test_number=args.PermutationTestNumber,
         permutation_test_num_jobs=args.PermutationTestNumJobs,
