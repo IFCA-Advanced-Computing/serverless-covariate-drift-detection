@@ -21,13 +21,6 @@ detector = Detector(
     settings=detector_settings,
 )
 
-class Variable:
-    def __init__(self, d1,d2,d3):
-        self.alpha = d1
-        self.values = d2
-        self.return_input_values=d3
-        
-
 def check_drift(data: DetectorInputData,out) -> DistanceBasedResponse:
      #async
     """Check if drift is present.
