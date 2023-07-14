@@ -12,7 +12,7 @@ class APISettings(BaseSettings):
     """
 
     API_V1_STR: str = "/api/v1"
-    PROJECT_NAME: str = "ML inference service"
+    PROJECT_NAME: str = "Embedding Matrix service"
     VERSION = "1.0.0"
 
 
