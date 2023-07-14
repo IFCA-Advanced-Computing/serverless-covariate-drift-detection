@@ -10,7 +10,6 @@ RUN apt-get -y update && \
     adduser --no-create-home --shell /bin/false --disabled-password --uid 1001 --system --group app && \
     pip install --upgrade -r requirements.txt --no-cache-dir && \
     rm requirements.txt
-RUN  pip install Pillow
 
 COPY app ./
 
