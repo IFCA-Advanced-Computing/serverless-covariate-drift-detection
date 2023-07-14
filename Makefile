@@ -1,18 +1,6 @@
 .ONESHELL:
 SHELL := /bin/bash
 
-VENV=.venv
-
-install:
-	python3 -m venv $(VENV)
-	source $(VENV)/bin/activate
-	pip3 install --upgrade pip &&\
-				 pip3 install -r api/requirements/requirements.txt \
-				              -r api/requirements/tox_requirements.txt
-
-tox:
-	$(VENV)/bin/tox
-
 add-multi-arch-builder:
 	docker run --privileged --rm tonistiigi/binfmt --install all
 	docker buildx create --name drift-detection-builder --driver docker-container --bootstrap
