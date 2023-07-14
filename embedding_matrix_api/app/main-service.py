@@ -12,7 +12,7 @@ import ast
 import json
 
 #Function to create object with data in json format
-class format:
+class data_json:
     def __init__(self, alpha, value,return_input_values):
         self.alpha = alpha
         self.values = value
@@ -71,7 +71,7 @@ if objList>objCount+1:
     #In case there is no blank object
     if z==0:
         #Create json object with data for DDS service
-        values=format(float('0.05'),dataFiles,True)
+        values=data_json(float('0.05'),dataFiles,True)
         data = json.dumps(values.__dict__)
         
         #Write the file with the N embedding data in the service output bucket
