@@ -1,1 +1,1 @@
-"""Detector API __init__."""
+"""Embedding matrix API __init__."""
