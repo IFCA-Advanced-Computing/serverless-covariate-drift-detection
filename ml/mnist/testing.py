@@ -140,16 +140,23 @@ if __name__ == "__main__":
         format="%(asctime)s,%(msecs)03d %(levelname)-8s [%(filename)s:%(lineno)d] %(message)s",
         datefmt="%Y-%m-%d:%H:%M:%S",
         level=logging.INFO,
+        force=True,
     )
     logger = logging.getLogger(__name__)
+
+    current_file_path = Path(__file__).parent.resolve()
+    root_path = Path(__file__).parent.parent.parent.resolve()
+    model_inference_objects_path = Path(root_path, "model_inference_api/app/objects/")
+    detector_objects_path = Path(root_path, "detector_api/app/objects/")
+    dimensionality_reduction_objects_path = Path(root_path, "dimensionality_reduction_api/app/objects/")
 
     parser = argparse.ArgumentParser(description="MNIST testing.")
     parser.add_argument("-ti", "--TestImagesDir", type=str, help="Test images directory", default="data/test")
     parser.add_argument("-mb", "--CNNBatchSize", type=int, help="CNN batch size", default=64)
-    parser.add_argument("-mf", "--CNNFilePath", type=str, help="CNN file path", default="objects/cnn.pt")
-    parser.add_argument("-df", "--DetectorFilePath", type=str, help="Detector file path", default="objects/detector.pkl")
-    parser.add_argument("-ef", "--EncoderFilePath", type=str, help="Encoder file path", default="objects/encoder.pt")
-    parser.add_argument("-tf", "--TransformFilePath", type=str, help="Transform file path", default="objects/transformer.pt")
+    parser.add_argument("-mf", "--CNNFilePath", type=str, help="CNN file path", default=Path(current_file_path, "objects/cnn.pt"))
+    parser.add_argument("-df", "--DetectorFilePath", type=str, help="Detector file path", default=Path(current_file_path, "objects/detector.pkl"))
+    parser.add_argument("-ef", "--EncoderFilePath", type=str, help="Encoder file path", default=Path(current_file_path, "objects/encoder.pt"))
+    parser.add_argument("-tf", "--TransformFilePath", type=str, help="Transform file path", default=Path(current_file_path, "objects/transformer.pt"))
     parser.add_argument("-a", "--Alpha", type=float, help="Alpha", default=0.01)
     parser.add_argument("-st", "--SaveTransformedImages", type=bool, help="Save transformed images", default=False)
 
