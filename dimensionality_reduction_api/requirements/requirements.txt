@@ -3,4 +3,4 @@ numpy==1.26.3
 --extra-index-url https://download.pytorch.org/whl/cpu
 torch==2.1.2
 torchvision==0.16.2
-Pillow==9.5.0
+Pillow==10.2.0
