@@ -1,7 +1,7 @@
 frouros==0.6.1
 --extra-index-url https://download.pytorch.org/whl/cu118
-torch==2.0.1
-torchvision==0.15.2
+torch==2.1.2
+torchvision==0.16.2
 tqdm==4.65.0
 pytorch-lightning==2.0.4
 tensorboard==2.13.0
