@@ -8,7 +8,7 @@ Create a virtual environment and install the required packages for the training 
 ```bash
 python3 -m venv .venv
 source .venv/bin/activate
-pip install -r ml/mnist/requirements.txt
+pip install -r ml/requirements.txt
 ```
 
 ## Data
