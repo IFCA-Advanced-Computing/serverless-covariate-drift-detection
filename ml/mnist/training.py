@@ -196,11 +196,13 @@ def main(
         dataset=train_cnn_dataset,
         batch_size=cnn_batch_size,
         shuffle=True,
+        num_workers=2,
     )
     val_cnn_data_loader = torch.utils.data.DataLoader(  # 30000 samples
         dataset=val_cnn_dataset,
         batch_size=cnn_batch_size,
         shuffle=False,
+        num_workers=2,
     )
 
     cnn = CNN(
@@ -225,11 +227,13 @@ def main(
         dataset=train_autoencoder_dataset,
         batch_size=autoencoder_batch_size,
         shuffle=True,
+        num_workers=2,
     )
     val_autoencoder_data_loader = torch.utils.data.DataLoader(  # 30000 samples
         dataset=val_autoencoder_dataset,
         batch_size=autoencoder_batch_size,
         shuffle=False,
+        num_workers=2,
     )
 
     autoencoder = AutoEncoder(
@@ -255,6 +259,7 @@ def main(
         dataset=detector_dataset,
         batch_size=detector_batch_size,
         shuffle=False,
+        num_workers=2,
     )
 
     logger.info("Encoding reference data...")
