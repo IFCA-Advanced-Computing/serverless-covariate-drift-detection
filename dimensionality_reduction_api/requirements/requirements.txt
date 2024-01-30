@@ -1,5 +1,5 @@
 litestar[standard]==2.5.3
-numpy==1.24.3
+numpy==1.26.3
 --extra-index-url https://download.pytorch.org/whl/cpu
 torch==2.0.1
 torchvision==0.15.2
