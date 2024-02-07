@@ -1,3 +1,5 @@
-litestar[standard]==2.5.3
-numpy==1.26.3
+litestar[standard]==2.6.0
+numpy==1.25.2
+pydantic==2.6.1
+pydantic-settings==2.1.0
 frouros==0.6.1

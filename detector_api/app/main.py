@@ -1,10 +1,11 @@
 """Main module."""
 
-from api import api_router
 from litestar import Litestar
 from litestar.app import OpenAPIConfig
 from litestar.logging import LoggingConfig
 from litestar.openapi import OpenAPIController
+
+from api import api_router
 from settings import api_settings
 
 

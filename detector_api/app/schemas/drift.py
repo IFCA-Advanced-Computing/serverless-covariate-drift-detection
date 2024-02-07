@@ -1,7 +1,7 @@
 """Drift schemas."""
 
 import numpy as np
-from pydantic import BaseModel, validator
+from pydantic import BaseModel, field_validator
 
 
 class DetectorInputData(BaseModel):
@@ -10,11 +10,11 @@ class DetectorInputData(BaseModel):
     Set input detector values and parse them
     """
 
-    alpha: float | None
+    alpha: float = 0.05
     values: list[list[float]]
     return_input_values: bool = False
 
-    @validator("values", pre=False)
+    @field_validator("values", mode="after")
     def parse_values(
         cls: "DetectorInputData",  # noqa: N805
         values: list[list[float]],
@@ -30,7 +30,7 @@ class BaseCheckDriftResponse(BaseModel):
     the defined format.
     """
 
-    alpha: float
+    alpha: float = 0.05
     datetime: str
     is_drift: bool
     p_value: float

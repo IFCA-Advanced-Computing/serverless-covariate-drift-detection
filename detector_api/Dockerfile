@@ -1,9 +1,12 @@
 FROM python:3.10-slim
 LABEL author="Jaime Céspedes Sisniega <cespedes@ifca.unican.es>"
 
+ARG DATASET
+ARG PARENT_DIR
+
 WORKDIR /app
 
-COPY requirements/requirements.txt .
+COPY ${PARENT_DIR}/requirements/requirements.txt .
 
 RUN apt-get -y update && \
     addgroup --gid 1001 --system app && \
@@ -11,7 +14,8 @@ RUN apt-get -y update && \
     pip install --upgrade -r requirements.txt --no-cache-dir && \
     rm requirements.txt
 
-COPY app ./
+COPY ${PARENT_DIR}/app ./
+COPY ./ml/${DATASET}/detector.pkl ./objects/detector.pkl
 
 USER app
 

@@ -2,11 +2,12 @@
 
 import logging
 
-from detector import Detector
 from litestar import Router, get, post
 from litestar.status_codes import (
     HTTP_200_OK,
 )
+
+from detector import Detector
 from schemas import (
     DetectorInputData,
     DistanceBasedResponse,
@@ -29,7 +30,7 @@ async def check_drift(data: DetectorInputData) -> DistanceBasedResponse:
     :param data: input data
     :type data: DetectorInputData
     :return: drift data information
-    :rtype: BaseCheckDriftResponse
+    :rtype: DistanceBasedResponse
     """
     logging.info("Checking drift...")
     check_drift_result = detector.check_drift(

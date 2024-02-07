@@ -4,9 +4,11 @@ import datetime
 import logging
 import pickle
 from pathlib import Path
+from typing import Any
 
 import numpy as np
-from frouros.detectors.base import DetectorBase
+from frouros.detectors.base import BaseDetector
+
 from settings import DetectorSettings
 from utils import SingletonMeta
 
@@ -22,11 +24,11 @@ class Detector(metaclass=SingletonMeta):
         )
         logging.info("Drift detector loaded.")
 
-    def load(self: "Detector", settings: DetectorSettings) -> DetectorBase:
+    def load(self: "Detector", settings: DetectorSettings) -> BaseDetector:
         """Load drift detector.
 
         :return detector
-        :rtype: DetectorBase
+        :rtype: BaseDetector
         """
         detector = self._load(
             settings=settings,
@@ -34,7 +36,7 @@ class Detector(metaclass=SingletonMeta):
         return detector
 
     @staticmethod
-    def _load(settings: DetectorSettings) -> DetectorBase:
+    def _load(settings: DetectorSettings) -> BaseDetector:
         with Path.open(settings.FILE_PATH, mode="rb") as f:
             data = f.read()
         return pickle.loads(data)  # noqa: S301
@@ -43,7 +45,7 @@ class Detector(metaclass=SingletonMeta):
         self: "Detector",
         values: np.ndarray,
         alpha: float = 0.05,
-    ) -> dict[str, str | bool | float | np.ndarray]:
+    ) -> dict[str, Any]:
         """Check if drift is present.
 
         :param values: input sample
@@ -51,9 +53,11 @@ class Detector(metaclass=SingletonMeta):
         :param alpha: significance level, defaults to 0.05
         :type alpha: float, optional
         :return: drift data information
-        :rtype: dict[str, str]
+        :rtype: dict[str, Any]
         """
-        distance, callback_logs = self.detector.compare(X=values)
+        distance, callback_logs = self.detector.compare(
+            X=values,
+        )
 
         return {
             "alpha": alpha,
@@ -61,6 +65,6 @@ class Detector(metaclass=SingletonMeta):
                 "%d/%m/%Y %H:%M:%S.%f",
             ),
             "distance": distance,
-            "is_drift": callback_logs["permutation_test"]["p_value"] < alpha,
+            "is_drift": callback_logs["permutation_test"]["p_value"] <= alpha,
             "p_value": callback_logs["permutation_test"]["p_value"],
         }
