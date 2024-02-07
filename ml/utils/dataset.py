@@ -3,7 +3,7 @@ import torchvision
 from torch.utils.data import Dataset
 
 
-class CustomMNIST(Dataset):
+class CustomDataset(Dataset):
 
     def __init__(
         self,
@@ -13,7 +13,6 @@ class CustomMNIST(Dataset):
         super().__init__()
         self.subset = subset
         self.transform = transform
-        self.samples = subset.samples
 
     def __getitem__(self, index):
         x, y = self.subset[index]
