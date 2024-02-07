@@ -2,9 +2,9 @@
 
 from io import BytesIO
 
-from PIL import Image, ImageOps
+from PIL import Image
 from litestar.datastructures import UploadFile
-from pydantic import BaseConfig, BaseModel, validator
+from pydantic import BaseConfig, BaseModel, field_validator
 
 
 class ModelInputData(BaseModel):
@@ -12,7 +12,7 @@ class ModelInputData(BaseModel):
 
     image: UploadFile
 
-    @validator("image", pre=False)
+    @field_validator("image", mode="after")
     async def parse_image(cls, data: UploadFile) -> Image:
         """Parse image.
 
@@ -22,13 +22,11 @@ class ModelInputData(BaseModel):
         :rtype: Image
         """
         data = await data.read()
-        image = ImageOps.grayscale(
-            image=Image.open(
-                fp=BytesIO(
-                    initial_bytes=data,
-                ),
+        image = Image.open(
+            fp=BytesIO(
+                initial_bytes=data,
             ),
-        ).resize((28, 28))
+        )
         return image
 
     class Config(BaseConfig):

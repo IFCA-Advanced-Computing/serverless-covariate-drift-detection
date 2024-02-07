@@ -2,7 +2,7 @@
 
 from pathlib import Path
 
-from pydantic import BaseSettings
+from pydantic_settings import BaseSettings
 
 
 class APISettings(BaseSettings):
@@ -13,7 +13,7 @@ class APISettings(BaseSettings):
 
     API_V1_STR: str = "/api/v1"
     PROJECT_NAME: str = "ML inference service"
-    VERSION = "1.0.0"
+    VERSION: str = "1.0.0"
 
 
 class ModelSettings(BaseSettings):

@@ -32,9 +32,9 @@ model = Model(
     status_code=HTTP_200_OK,
 )
 async def predict(
-        data: ModelInputData = Body(
-            media_type=RequestEncodingType.MULTI_PART,
-        ),
+    data: ModelInputData = Body(
+        media_type=RequestEncodingType.MULTI_PART,
+    ),
 ) -> PredictResponse:
     """Predict function.
 

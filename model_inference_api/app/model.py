@@ -2,6 +2,7 @@
 
 import datetime
 import logging
+from typing import Tuple
 
 import PIL
 import numpy as np
@@ -14,34 +15,59 @@ from utils import SingletonMeta
 
 
 class CNN(nn.Module):
-    def __init__(self) -> None:
+    def __init__(self, input_size: Tuple[int, int, int], num_classes: int) -> None:
         super().__init__()
+        self.input_size = input_size
+        self.num_classes = num_classes
 
         self.conv1 = nn.Sequential(
             nn.Conv2d(
-                in_channels=1,
+                in_channels=self.input_size[0],
                 out_channels=16,
                 kernel_size=5,
                 stride=1,
                 padding=2,
             ),
             nn.ReLU(),
-            nn.MaxPool2d(kernel_size=2),
+            nn.MaxPool2d(
+                kernel_size=2,
+            ),
         )
         self.conv2 = nn.Sequential(
-            nn.Conv2d(16, 32, 5, 1, 2),
+            nn.Conv2d(
+                in_channels=16,
+                out_channels=32,
+                kernel_size=5,
+                stride=1,
+                padding=2,
+            ),
             nn.ReLU(),
-            nn.MaxPool2d(2),
+            nn.MaxPool2d(
+                kernel_size=2,
+            ),
+        )
+        # Compute the size of the feature maps dynamically
+        self._feature_size = self._get_feature_size(
+            input_channels=self.input_size[0],
+            input_size=self.input_size[1:],
         )
 
         # fully connected layer, output 10 classes
-        self.out = nn.Linear(32 * 7 * 7, 10)
+        self.out = nn.Linear(
+            in_features=self._feature_size,
+            out_features=self.num_classes,
+        )
+
+    def _get_feature_size(self, input_channels: int, input_size: Tuple[int, int]) -> int:
+        # Function to compute the size of the feature maps after convolutional layers
+        x = torch.randn(1, input_channels, *input_size)
+        x = self.conv1(x)
+        x = self.conv2(x)
+        return x.view(1, -1).size(1)
 
     def forward(self, x):
         x = self.conv1(x)
         x = self.conv2(x)
-
-        # flatten the output of conv2 to (batch_size, 32 * 7 * 7)
         x = x.view(x.size(0), -1)
         output = self.out(x)
         return output
@@ -51,9 +77,9 @@ class Model(metaclass=SingletonMeta):
     """Model class."""
 
     def __init__(
-            self: "Model",
-            settings_model: ModelSettings,
-            settings_transformer: TransformerSettings,
+        self: "Model",
+        settings_model: ModelSettings,
+        settings_transformer: TransformerSettings,
     ) -> None:
         """Init method."""
         logging.info("Loading model...")
@@ -68,8 +94,8 @@ class Model(metaclass=SingletonMeta):
         logging.info("Transformer loaded.")
 
     def load_model(
-            self: "Model",
-            settings: ModelSettings,
+        self: "Model",
+        settings: ModelSettings,
     ) -> CNN:
         """Load model.
 
@@ -82,8 +108,8 @@ class Model(metaclass=SingletonMeta):
         return model
 
     def load_transformer(
-            self: "Model",
-            settings: TransformerSettings,
+        self: "Model",
+        settings: TransformerSettings,
     ) -> torchvision.transforms.Compose:
         """Load transformer.
 
@@ -142,11 +168,15 @@ class Model(metaclass=SingletonMeta):
 
     @staticmethod
     def _load_model(settings: ModelSettings) -> CNN:
-        model = CNN()
-        model.eval()
         model_state_dict = torch.load(
             f=settings.FILE_PATH,
         )
+        input_channels = [*model_state_dict.values()][0].shape[1]
+        model = CNN(
+            input_size=(input_channels, 28, 28),
+            num_classes=10,
+        )
+        model.eval()
         for k, _v in model_state_dict.copy().items():
             model_state_dict[k.removeprefix("_orig_mod.")] = model_state_dict.pop(k)
         model.load_state_dict(state_dict=model_state_dict)
@@ -154,7 +184,7 @@ class Model(metaclass=SingletonMeta):
 
     @staticmethod
     def _load_transformer(
-            settings: TransformerSettings,
+        settings: TransformerSettings,
     ) -> torchvision.transforms.Compose:
         transformer = torch.load(
             f=settings.FILE_PATH,
