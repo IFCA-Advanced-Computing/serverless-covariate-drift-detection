@@ -1,6 +1,6 @@
-# Serverless data drift detection
+# Serverless covariate drift detection
 
-This repository contains the code to reproduce the training and deployment of the proposed serverless architecture for data drift detection of the paper "Efficient and scalable data drift detection in machine learning sytems with serverless computing".
+This repository contains the code to reproduce the training and deployment of the proposed serverless architecture for data drift detection of the paper [Efficient and scalable covariate drift detection in machine learning sytems with serverless computing](https://doi.org/10.1016/j.future.2024.07.010).
 
 
 ## Installation
@@ -63,9 +63,9 @@ The Dimensionality Reduction Service can be build (for arm64 and amd64) and push
 make build-push-dimensionality-reduction
 ``` 
 
-#### Data Drift Detection Service (DDS)
+#### Drift Detection Service (DDS)
 
-The Data Drift Detection Service can be build (for arm64 and amd64) and pushed to Docker Hub using the following commands:
+The Drift Detection Service can be build (for arm64 and amd64) and pushed to Docker Hub using the following commands:
 ```bash
-make build-push-data-drift-detection
+make build-push-drift-detection
 ```
