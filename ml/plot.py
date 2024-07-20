@@ -1,6 +1,7 @@
 # Plot one MNIST digit per class (2 rows, 5 columns).
 
 import random
+from pathlib import Path
 
 import matplotlib.pyplot as plt
 import numpy as np
@@ -9,7 +10,6 @@ import torchvision
 
 from ml.utils.constants import DATASETS, IMAGE_SIZE
 from ml.utils.drift import make_transformed_dataset, transformations
-
 
 # Set the font size for the plots
 plt.rcParams.update({'font.size': 20})
@@ -62,7 +62,11 @@ for dataset in DATASETS:
         break
 
     plt.tight_layout()
-    plt.show()
+    # Save the plot
+    fig_output_path = Path(f"plots/{dataset.lower()}-reference.png")
+    # Create the plots directory if it does not exist
+    fig_output_path.parent.mkdir(parents=True, exist_ok=True)
+    plt.savefig(f"plots/{dataset.lower()}-reference.png", dpi=300, bbox_inches='tight')
 
     for type_, transformation in transformations:
         transformed_dataset = make_transformed_dataset(
@@ -92,4 +96,8 @@ for dataset in DATASETS:
             break
 
         plt.tight_layout()
-        plt.show()
+        # Save the plot
+        fig_output_path = Path(f"plots/{dataset.lower()}-{type_.lower()}.png")
+        # Create the plots directory if it does not exist
+        fig_output_path.parent.mkdir(parents=True, exist_ok=True)
+        plt.savefig(f"plots/{dataset.lower()}-{type_.lower()}.png", dpi=300, bbox_inches='tight')
