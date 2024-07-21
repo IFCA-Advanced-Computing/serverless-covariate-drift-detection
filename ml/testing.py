@@ -8,11 +8,11 @@ from typing import Any
 import numpy as np
 import torch
 
-from ml.utils.autoencoder import Encoder, encode_data
-from ml.utils.cnn import CNN, test_model
-from ml.utils.drift import make_transformed_dataset, save_images
-from ml.utils.drift import transformations
+from utils.autoencoder import Encoder, encode_data
+from utils.cnn import CNN, test_model
 from utils.constants import DATASETS, IMAGE_SIZE
+from utils.drift import make_transformed_dataset, save_images
+from utils.drift import transformations
 
 
 def check_drift(detector, X: np.ndarray, alpha: float) -> dict[str, Any]:
@@ -32,30 +32,22 @@ def load_obj(path: Path) -> Any:
     return obj
 
 
-def add_suffix_to_path(path: Path, suffix: str) -> Path:
-    return path.with_name(f"{path.stem}_{suffix}{path.suffix}")
-
-
 def main(
-        dataset: str,
-        test_images_dir: str,
-        encoder_file_path: Path,
-        detector_file_path: Path,
-        cnn_batch_size: int,
-        cnn_file_path: Path,
-        transform_file_path: Path,
-        alpha: float,
-        save_transformed_images: bool,
+    dataset: str,
+    test_images_dir: str,
+    cnn_batch_size: int,
+    alpha: float,
+    save_transformed_images: bool,
+    objects_path: Path,
 ) -> None:
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-    dataset_suffix = dataset.lower()
+    dataset_lowercase = DATASETS[dataset]["lowercase"]
+
+    transform_file_path = Path(objects_path, f"{dataset_lowercase}/transform.pt")
 
     logger.info("Loading transform...")
     transform = torch.load(
-        f=add_suffix_to_path(
-            path=transform_file_path,
-            suffix=dataset_suffix,
-        )
+        f=transform_file_path,
     )
 
     test_dataset = DATASETS[dataset]["name"](
@@ -94,12 +86,11 @@ def main(
                 target_dir=Path("data", type_),
             )
 
+    encoder_file_path = Path(objects_path, f"{dataset_lowercase}/encoder.pt")
+
     logger.info("Loading encoder...")
     encoder_state_dict = torch.load(
-        f=add_suffix_to_path(
-            path=encoder_file_path,
-            suffix=dataset_suffix,
-        )
+        f=encoder_file_path,
     )
     latent_dim = [*encoder_state_dict.items()][-1][-1].size(dim=0)
     encoder = Encoder(
@@ -119,27 +110,22 @@ def main(
         )
         X_encoded.append((type_, X))
 
-    logger.info("Loading drift detector...")
-    detector = load_obj(
-        path=add_suffix_to_path(
-            path=detector_file_path,
-            suffix=dataset_suffix,
-        )
-    )
-    # FIXME: This is a hack to change the number of permutations
-    # detector.callbacks[0].num_permutations = 20
+    detector_file_path = Path(objects_path, f"{dataset_lowercase}/detector.pkl")
 
-    # bonferroni_alpha = alpha / detector.callbacks[0].num_permutations
-    #
-    # logger.info(f"Checking for drift using Bonferroni correction with alpha={bonferroni_alpha}...")
+    logger.info("Loading covariate drift detector...")
+    detector = load_obj(
+        path=detector_file_path,
+    )
 
     for type_, X in X_encoded:
-        data_drift_check = check_drift(
+        covariate_drift_check = check_drift(
             detector=detector,
             X=X,
             alpha=alpha,
         )
-        logger.info(f"{type_} data drift check: {data_drift_check}")
+        logger.info(f"{type_} covariate drift check: {covariate_drift_check}")
+
+    cnn_file_path = Path(objects_path, f"{dataset_lowercase}/cnn.pt")
 
     logger.info("Loading CNN...")
     cnn = CNN(
@@ -148,10 +134,7 @@ def main(
     ).to(device)
     cnn.eval()
     cnn_state_dict = torch.load(
-        f=add_suffix_to_path(
-            path=cnn_file_path,
-            suffix=dataset_suffix,
-        )
+        f=cnn_file_path,
     )
     for k, _v in cnn_state_dict.copy().items():
         cnn_state_dict[k.removeprefix("_orig_mod.")] = cnn_state_dict.pop(k)
@@ -176,21 +159,35 @@ if __name__ == "__main__":
     logger = logging.getLogger(__name__)
 
     current_file_path = Path(__file__).parent.resolve()
-    root_path = Path(__file__).parent.parent.parent.resolve()
-    model_inference_objects_path = Path(root_path, "model_inference_api/app/objects/")
-    detector_objects_path = Path(root_path, "detector_api/app/objects/")
-    dimensionality_reduction_objects_path = Path(root_path, "dimensionality_reduction_api/app/objects/")
+    objects_path = Path(current_file_path, "objects/")
 
     parser = argparse.ArgumentParser(description="Testing model")
-    parser.add_argument("-d", "--Dataset", type=str, help="Dataset", choices=["MNIST", "FashionMNIST", "CIFAR10"], default="CIFAR10")
-    parser.add_argument("-ti", "--TestImagesDir", type=str, help="Test images directory", default="/tmp/test/")
-    parser.add_argument("-mb", "--CNNBatchSize", type=int, help="CNN batch size", default=64)
-    parser.add_argument("-mf", "--CNNFilePath", type=str, help="CNN file path", default=Path(current_file_path, "objects/cnn.pt"))
-    parser.add_argument("-df", "--DetectorFilePath", type=str, help="Detector file path", default=Path(current_file_path, "objects/detector.pkl"))
-    parser.add_argument("-ef", "--EncoderFilePath", type=str, help="Encoder file path", default=Path(current_file_path, "objects/encoder.pt"))
-    parser.add_argument("-tf", "--TransformFilePath", type=str, help="Transform file path", default=Path(current_file_path, "objects/transformer.pt"))
+    parser.add_argument(
+        "-d",
+        "--Dataset",
+        type=str,
+        help="Dataset",
+        choices=["MNIST", "FashionMNIST", "CIFAR10"],
+        default="MNIST",
+    )
+    parser.add_argument(
+        "-ti",
+        "--TestImagesDir",
+        type=str,
+        help="Test images directory",
+        default="/tmp/test/",
+    )
+    parser.add_argument(
+        "-mb", "--CNNBatchSize", type=int, help="CNN batch size", default=64
+    )
     parser.add_argument("-a", "--Alpha", type=float, help="Alpha", default=0.01)
-    parser.add_argument("-st", "--SaveTransformedImages", type=bool, help="Save transformed images", default=False)
+    parser.add_argument(
+        "-st",
+        "--SaveTransformedImages",
+        type=bool,
+        help="Save transformed images",
+        default=False,
+    )
 
     args = parser.parse_args()
 
@@ -198,10 +195,7 @@ if __name__ == "__main__":
         dataset=args.Dataset,
         test_images_dir=args.TestImagesDir,
         cnn_batch_size=args.CNNBatchSize,
-        cnn_file_path=Path(args.CNNFilePath),
-        detector_file_path=Path(args.DetectorFilePath),
-        encoder_file_path=Path(args.EncoderFilePath),
-        transform_file_path=Path(args.TransformFilePath),
         alpha=args.Alpha,
         save_transformed_images=args.SaveTransformedImages,
+        objects_path=objects_path,
     )
