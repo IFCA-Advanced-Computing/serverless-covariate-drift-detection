@@ -23,10 +23,10 @@ class DimensionalityReductionInputData(BaseModel):
         """
         data = await data.read()
         image = Image.open(
-                fp=BytesIO(
-                    initial_bytes=data,
-                ),
-            )
+            fp=BytesIO(
+                initial_bytes=data,
+            ),
+        )
         return image
 
     class Config(BaseConfig):

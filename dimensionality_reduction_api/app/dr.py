@@ -8,7 +8,7 @@ import torch
 import torchvision
 from torch import nn
 
-from settings import EncoderSettings, TransformerSettings
+from settings import EncoderSettings, TransformSettings
 from utils import SingletonMeta
 
 
@@ -70,7 +70,9 @@ class Encoder(nn.Module):
             ),
         )
 
-    def _get_feature_size(self, input_channels: int, input_size: Tuple[int, int]) -> Tuple[int, int, int]:
+    def _get_feature_size(
+        self, input_channels: int, input_size: Tuple[int, int]
+    ) -> Tuple[int, int, int]:
         # Function to compute the size of the feature maps after convolutional layers
         x = torch.randn(1, input_channels, *input_size)
         x = self.encoder_conv(x)
@@ -89,7 +91,7 @@ class DimensionalityReduction(metaclass=SingletonMeta):
     def __init__(
         self: "DimensionalityReduction",
         settings_encoder: EncoderSettings,
-        settings_transformer: TransformerSettings,
+        settings_transform: TransformSettings,
     ) -> None:
         """Init method."""
         logging.info("Loading image encoder...")
@@ -97,11 +99,11 @@ class DimensionalityReduction(metaclass=SingletonMeta):
             settings=settings_encoder,
         )
         logging.info("Image encoder loaded.")
-        logging.info("Loading transformer...")
-        self.transformer = self.load_transformer(
-            settings=settings_transformer,
+        logging.info("Loading transform...")
+        self.transform = self.load_transform(
+            settings=settings_transform,
         )
-        logging.info("Transformer loaded.")
+        logging.info("Transform loaded.")
 
     def load_encoder(
         self: "DimensionalityReduction",
@@ -117,16 +119,16 @@ class DimensionalityReduction(metaclass=SingletonMeta):
         )
         return encoder
 
-    def load_transformer(
+    def load_transform(
         self: "DimensionalityReduction",
-        settings: EncoderSettings,
+        settings: TransformSettings
     ) -> torchvision.transforms.Compose:
         """Load image encoder.
 
         :return encoder
         :rtype: dict[str, str | None]
         """
-        transformer = self._load_transformer(
+        transformer = self._load_transform(
             settings=settings,
         )
         return transformer
@@ -143,7 +145,7 @@ class DimensionalityReduction(metaclass=SingletonMeta):
             encoded = self.encoder(data).numpy()
         return encoded
 
-    def transform(self, data: np.ndarray) -> torch.Tensor:
+    def apply_transform(self, data: np.ndarray) -> torch.Tensor:
         """Transform data.
 
         :param data: data
@@ -152,7 +154,7 @@ class DimensionalityReduction(metaclass=SingletonMeta):
         :rtype: np.ndarray
         """
 
-        transformed = self.transformer(data).unsqueeze(0)
+        transformed = self.transform(data).unsqueeze(0)
         return transformed
 
     @staticmethod
@@ -173,8 +175,8 @@ class DimensionalityReduction(metaclass=SingletonMeta):
         return encoder
 
     @staticmethod
-    def _load_transformer(
-        settings: TransformerSettings,
+    def _load_transform(
+        settings: TransformSettings,
     ) -> torchvision.transforms.Compose:
         transformer = torch.load(
             f=settings.FILE_PATH,

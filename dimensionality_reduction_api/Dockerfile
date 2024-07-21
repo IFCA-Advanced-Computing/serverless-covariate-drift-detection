@@ -1,5 +1,5 @@
 FROM python:3.10-slim
-LABEL author="Jaime Céspedes Sisniega <cespedes@ifca.unican.es>"
+LABEL author="Jaime Céspedes Sisniega <jaime.cespedes@alumnos.unican.es>"
 
 ARG DATASET
 ARG PARENT_DIR
@@ -15,8 +15,8 @@ RUN apt-get -y update && \
     rm requirements.txt
 
 COPY ${PARENT_DIR}/app ./
-COPY ./ml/${DATASET}/encoder.pt ./objects/encoder.pt
-COPY ./ml/${DATASET}/transformer.pt ./objects/transformer.pt
+COPY ./ml/objects/${DATASET}/encoder.pt ./objects/encoder.pt
+COPY ./ml/objects/${DATASET}/transform.pt ./objects/transform.pt
 
 USER app
 
