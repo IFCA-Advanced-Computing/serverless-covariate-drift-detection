@@ -12,7 +12,7 @@ class APISettings(BaseSettings):
     """
 
     API_V1_STR: str = "/api/v1"
-    PROJECT_NAME: str = "Data drift detection service"
+    PROJECT_NAME: str = "Covariate drift detection service"
     VERSION: str = "1.0.0"
 
 

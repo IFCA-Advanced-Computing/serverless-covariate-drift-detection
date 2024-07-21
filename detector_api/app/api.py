@@ -25,14 +25,14 @@ detector = Detector(
     status_code=HTTP_200_OK,
 )
 async def check_drift(data: DetectorInputData) -> DistanceBasedResponse:
-    """Check if drift is present.
+    """Check if covariate drift is present.
 
     :param data: input data
     :type data: DetectorInputData
-    :return: drift data information
+    :return: covariate drift data information
     :rtype: DistanceBasedResponse
     """
-    logging.info("Checking drift...")
+    logging.info("Checking covariate drift...")
     check_drift_result = detector.check_drift(
         values=data.values,
         alpha=data.alpha,

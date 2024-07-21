@@ -1,5 +1,5 @@
 FROM python:3.10-slim
-LABEL author="Jaime Céspedes Sisniega <cespedes@ifca.unican.es>"
+LABEL author="Jaime Céspedes Sisniega <jaime.cespedes@alumnos.unican.es>"
 
 ARG DATASET
 ARG PARENT_DIR
@@ -15,7 +15,7 @@ RUN apt-get -y update && \
     rm requirements.txt
 
 COPY ${PARENT_DIR}/app ./
-COPY ./ml/${DATASET}/detector.pkl ./objects/detector.pkl
+COPY ./ml/objects/${DATASET}/detector.pkl ./objects/detector.pkl
 
 USER app
 
