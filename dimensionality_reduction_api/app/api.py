@@ -19,12 +19,12 @@ from schemas import (
 from settings import (
     api_settings,
     encoder_settings,
-    transformer_settings,
+    transform_settings,
 )
 
 dr = DimensionalityReduction(
     settings_encoder=encoder_settings,
-    settings_transformer=transformer_settings,
+    settings_transform=transform_settings,
 )
 
 
@@ -33,9 +33,9 @@ dr = DimensionalityReduction(
     status_code=HTTP_200_OK,
 )
 async def dimensionality_reduction(
-        data: DimensionalityReductionInputData = Body(
-            media_type=RequestEncodingType.MULTI_PART,
-        ),
+    data: DimensionalityReductionInputData = Body(
+        media_type=RequestEncodingType.MULTI_PART,
+    ),
 ) -> DimensionalityReductionResponse:
     """Reduce image.
 
@@ -46,7 +46,7 @@ async def dimensionality_reduction(
     """
     image = await data.image
     logging.info("Transforming image...")
-    transformed_image = dr.transform(
+    transformed_image = dr.apply_transform(
         data=image,
     )
     logging.info("Image transformed.")
