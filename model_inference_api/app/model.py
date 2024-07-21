@@ -5,12 +5,11 @@ import logging
 from typing import Tuple
 
 import PIL
-import numpy as np
 import torch
 import torch.nn as nn
 import torchvision
 
-from settings import ModelSettings, TransformerSettings
+from settings import ModelSettings, TransformSettings
 from utils import SingletonMeta
 
 
@@ -58,7 +57,9 @@ class CNN(nn.Module):
             out_features=self.num_classes,
         )
 
-    def _get_feature_size(self, input_channels: int, input_size: Tuple[int, int]) -> int:
+    def _get_feature_size(
+        self, input_channels: int, input_size: Tuple[int, int]
+    ) -> int:
         # Function to compute the size of the feature maps after convolutional layers
         x = torch.randn(1, input_channels, *input_size)
         x = self.conv1(x)
@@ -79,7 +80,7 @@ class Model(metaclass=SingletonMeta):
     def __init__(
         self: "Model",
         settings_model: ModelSettings,
-        settings_transformer: TransformerSettings,
+        settings_transform: TransformSettings,
     ) -> None:
         """Init method."""
         logging.info("Loading model...")
@@ -87,11 +88,11 @@ class Model(metaclass=SingletonMeta):
             settings=settings_model,
         )
         logging.info("Model loaded.")
-        logging.info("Loading transformer...")
-        self.transformer = self.load_transformer(
-            settings=settings_transformer,
+        logging.info("Loading transform...")
+        self.transform = self.load_transform(
+            settings=settings_transform,
         )
-        logging.info("Transformer loaded.")
+        logging.info("Transform loaded.")
 
     def load_model(
         self: "Model",
@@ -107,31 +108,19 @@ class Model(metaclass=SingletonMeta):
         )
         return model
 
-    def load_transformer(
+    def load_transform(
         self: "Model",
-        settings: TransformerSettings,
+        settings: TransformSettings,
     ) -> torchvision.transforms.Compose:
         """Load transformer.
 
         :return transformer
         :rtype: torchvision.transforms.Compose
         """
-        transformer = self._load_transformer(
+        transform = self._load_transform(
             settings=settings,
         )
-        return transformer
-
-    def encode(self, data: np.ndarray) -> np.ndarray:
-        """Encode data.
-
-        :param data: data
-        :type data: np.ndarray
-        :return: encoded data
-        :rtype: np.ndarray
-        """
-        with torch.no_grad():
-            encoded = self.encoder(data).numpy()
-        return encoded
+        return transform
 
     def predict(
         self: "Model",
@@ -155,7 +144,7 @@ class Model(metaclass=SingletonMeta):
             "prediction": class_pred,
         }
 
-    def transform(self, data: PIL.Image) -> torch.Tensor:
+    def apply_transform(self, data: PIL.Image) -> torch.Tensor:
         """Transform data.
 
         :param data: data
@@ -163,7 +152,7 @@ class Model(metaclass=SingletonMeta):
         :return: transformed data
         :rtype: torch.Tensor
         """
-        transformed = self.transformer(data).unsqueeze(0)
+        transformed = self.transform(data).unsqueeze(0)
         return transformed
 
     @staticmethod
@@ -183,8 +172,8 @@ class Model(metaclass=SingletonMeta):
         return model
 
     @staticmethod
-    def _load_transformer(
-        settings: TransformerSettings,
+    def _load_transform(
+        settings: TransformSettings,
     ) -> torchvision.transforms.Compose:
         transformer = torch.load(
             f=settings.FILE_PATH,

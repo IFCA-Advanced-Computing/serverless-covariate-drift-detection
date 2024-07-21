@@ -25,12 +25,12 @@ class ModelSettings(BaseSettings):
     FILE_PATH: Path = Path("objects/cnn.pt")
 
 
-class TransformerSettings(BaseSettings):
-    """Transformer settings class."""
+class TransformSettings(BaseSettings):
+    """Transform settings class."""
 
-    FILE_PATH: Path = Path("objects/transformer.pt")
+    FILE_PATH: Path = Path("objects/transform.pt")
 
 
 api_settings = APISettings()
 model_settings = ModelSettings()
-transformer_settings = TransformerSettings()
+transform_settings = TransformSettings()

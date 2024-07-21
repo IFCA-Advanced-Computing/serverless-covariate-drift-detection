@@ -18,12 +18,12 @@ from schemas import (
 from settings import (
     api_settings,
     model_settings,
-    transformer_settings,
+    transform_settings,
 )
 
 model = Model(
     settings_model=model_settings,
-    settings_transformer=transformer_settings,
+    settings_transform=transform_settings,
 )
 
 
@@ -45,7 +45,7 @@ async def predict(
     """
     image = await data.image
     logging.info("Transforming image...")
-    transformed_image = model.transform(
+    transformed_image = model.apply_transform(
         data=image,
     )
     logging.info("Image transformed.")
