@@ -66,7 +66,9 @@ class Encoder(nn.Module):
             ),
         )
 
-    def _get_feature_size(self, input_channels: int, input_size: Tuple[int, int]) -> Tuple[int, int, int]:
+    def _get_feature_size(
+        self, input_channels: int, input_size: Tuple[int, int]
+    ) -> Tuple[int, int, int]:
         # Function to compute the size of the feature maps after convolutional layers
         x = torch.randn(1, input_channels, *input_size)
         x = self.encoder_conv(x)
@@ -81,7 +83,12 @@ class Encoder(nn.Module):
 
 class Decoder(nn.Module):
 
-    def __init__(self, output_size: Tuple[int, int, int], feature_size: Tuple[int, int, int], latent_dim: int) -> None:
+    def __init__(
+        self,
+        output_size: Tuple[int, int, int],
+        feature_size: Tuple[int, int, int],
+        latent_dim: int,
+    ) -> None:
         super().__init__()
         self.output_size = output_size
 

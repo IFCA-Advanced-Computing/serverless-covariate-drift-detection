@@ -51,7 +51,9 @@ class CNN(nn.Module):
             out_features=self.num_classes,
         )
 
-    def _get_feature_size(self, input_channels: int, input_size: Tuple[int, int]) -> int:
+    def _get_feature_size(
+        self, input_channels: int, input_size: Tuple[int, int]
+    ) -> int:
         # Function to compute the size of the feature maps after convolutional layers
         x = torch.randn(1, input_channels, *input_size)
         x = self.conv1(x)
