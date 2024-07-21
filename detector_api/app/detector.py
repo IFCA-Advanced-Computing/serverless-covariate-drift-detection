@@ -18,14 +18,14 @@ class Detector(metaclass=SingletonMeta):
 
     def __init__(self: "Detector", settings: DetectorSettings) -> None:
         """Init method."""
-        logging.info("Loading drift detector...")
+        logging.info("Loading covariate drift detector...")
         self.detector = self.load(
             settings=settings,
         )
-        logging.info("Drift detector loaded.")
+        logging.info("Covariate drift detector loaded.")
 
     def load(self: "Detector", settings: DetectorSettings) -> BaseDetector:
-        """Load drift detector.
+        """Load covariate drift detector.
 
         :return detector
         :rtype: BaseDetector
@@ -46,13 +46,13 @@ class Detector(metaclass=SingletonMeta):
         values: np.ndarray,
         alpha: float = 0.05,
     ) -> dict[str, Any]:
-        """Check if drift is present.
+        """Check if covariate drift is present.
 
         :param values: input sample
         :type values: numpy.ndarray
         :param alpha: significance level, defaults to 0.05
         :type alpha: float, optional
-        :return: drift data information
+        :return: covariate drift data information
         :rtype: dict[str, Any]
         """
         distance, callback_logs = self.detector.compare(
