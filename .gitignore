@@ -160,3 +160,10 @@ cython_debug/
 .idea/
 
 lightning_logs/
+
+ml/objects/
+ml/plots/
+
+/detector_api/app/objects/
+/dimensionality_reduction_api/app/objects/
+/model_inference_api/app/objects/
